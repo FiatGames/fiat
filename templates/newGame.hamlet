@@ -1,0 +1,7 @@
+<h1>
+  New Game
+
+<form method=post action=@{NewGameR} enctype=#{enctype}>
+  ^{widget}
+  <button .btn.btn-primary type="submit">
+    Submit

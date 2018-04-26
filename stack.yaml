@@ -44,6 +44,8 @@ extra-deps:
   commit: b81e0d951e510ebffca03c5a58658ad884cc6fbd
 - git: https://github.com/FiatGames/fiat-game.git
   commit: 1b96ee93cf03c7ae96859f5514f502e0272ca236
+- git: https://github.com/FiatGames/quo-vadis
+  commit: 3e807113e8a3166b8f35c5083438d01738362732
   
 
 # Override default flag values for local packages and extra-deps

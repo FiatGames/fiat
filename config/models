@@ -6,13 +6,73 @@ User
     password Text Maybe
     UniqueUser ident
     deriving Typeable
-Email
+    deriving Eq
+    deriving Show
+    deriving Generic
+Email json
     email Text
     userId UserId Maybe
     verkey Text Maybe
     UniqueEmail email
-Comment json -- Adding "json" causes ToJSON and FromJSON instances to be derived.
+    deriving Generic
+Comment json
     message Text
     userId UserId Maybe
     deriving Eq
     deriving Show
+    deriving Generic
+Game
+    name Text
+    type GameType
+    code Text
+    stage GameStage
+    settings Text
+    state Text Maybe
+    userId UserId
+    stateHash Text
+    deriving Eq
+    deriving Show
+    deriving Generic
+FutureGameMove
+    gameId GameId
+    time UTCTime
+    move Text
+    deriving Eq
+    deriving Show
+    deriving Generic
+UserGame
+    userId UserId
+    gameId GameId
+    deriving Eq
+    deriving Show
+    deriving Generic
+    UniqueUserGame userId gameId
+ChatRoom
+    name Text
+    gameId GameId
+    isGeneral Bool
+    deriving Eq
+    deriving Show
+    deriving Generic
+ChatParticipants
+    userId UserId
+    chatRoomId ChatRoomId
+    deriving Eq
+    deriving Show
+    deriving Generic
+    UniqueUserChat userId chatRoomId
+ChatMessage
+    message Text
+    sent UTCTime
+    userId UserId
+    chatRoomId ChatRoomId
+    deriving Eq
+    deriving Show
+    deriving Generic
+ChatMessageRead
+    userId UserId
+    chatMessageId ChatMessageId
+    deriving Eq
+    deriving Show
+    deriving Generic
+    UniqueUserChatMessageRead userId chatMessageId
