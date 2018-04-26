@@ -180,7 +180,7 @@ instance Yesod App where
     isAuthorized RobotsR _     = pure Authorized
     isAuthorized (StaticR _) _ = pure Authorized
 
-
+    isAuthorized ChatR _       = isAuthenticated
     isAuthorized NewGameR _    = isAuthenticated
     isAuthorized (GamesR _) _  = isAuthenticated
 
@@ -234,6 +234,7 @@ instance YesodBreadcrumbs App where
     breadcrumb FaviconR = pure ("Home", Nothing)
     breadcrumb RobotsR = pure ("Home", Nothing)
     breadcrumb CommentR = pure ("Home", Nothing)
+    breadcrumb ChatR = pure ("Home", Nothing)
     breadcrumb (GamesR (GameChatR _))          = pure ("Home", Nothing)
     breadcrumb (GamesR (GameR gNum)) = runDB $ get gNum >>= \case
             Nothing -> pure ("Game", Just (GamesR AllGamesR))

@@ -11,20 +11,19 @@
 module Handler.Game where
 
 import           Control.Lens
-import           Control.Monad.Trans.Control
 import qualified Data.Conduit.List
 import           Data.Conduit.TMChan
-import qualified Data.Map                    as M
+import qualified Data.Map             as M
 import           Data.Maybe
-import           Data.UUID                   (fromText)
-import           Database.Persist.Sql        (fromSqlKey)
+import           Data.UUID            (fromText)
+import           Database.Persist.Sql (fromSqlKey)
 import           FiatChannel
 import           FiatGame.Types
 import           GameChannelProcessor
 import           GameType
 import           Import
 import           Queries.Game
-import           Yesod.WebSockets            (sinkWSText, sourceWS, webSockets)
+import           Yesod.WebSockets     (sinkWSText, sourceWS, webSockets)
 
 ensureInGame :: GameId -> UserId -> Handler Game
 ensureInGame gameId userId = do
@@ -37,7 +36,7 @@ initialMsg :: Key User -> Game -> ToFiatMsg
 initialMsg userId g = fromFiat (gameType g) (FiatPlayer (fromSqlKey userId)) fiat
     where fiat = FromFiat (SettingsMsg $ gameSettings g) (GameStateMsg <$> gameState g) (FiatGameHash $ gameStateHash g)
 
-getChatJavascriptPath :: Key User -> GameId -> WidgetT App IO Text
+getChatJavascriptPath :: Key User -> GameId -> WidgetFor App Text
 getChatJavascriptPath userId gameId = do
     render <- getUrlRenderParams
     let queryParams =
@@ -46,7 +45,7 @@ getChatJavascriptPath userId gameId = do
             ]
     pure $ render (StaticR (StaticRoute ["js", "chat.js"] [])) queryParams
 
-getJavascriptPath :: Key User -> Game -> GameId -> WidgetT App IO Text
+getJavascriptPath :: Key User -> Game -> GameId -> WidgetFor App Text
 getJavascriptPath userId (Game _ g code _ _ _ _ _) gameId = do
     render <- getUrlRenderParams
     let queryParams =
@@ -90,8 +89,8 @@ getJoinGameR uuid = do
                     runDB (addUserToGameIfCan userId g (appGameLocks app)) >>= \case
                         True -> do
                             game <- runDB $ get404 gameId
-                            liftIO $ withChannel (appGameChannels app) gameId
-                                $ \myChan -> runConduit $ Data.Conduit.List.sourceList [game]
+                            withChannel (appGameChannels app) gameId $ \myChan ->
+                                runConduit $ Data.Conduit.List.sourceList [game]
                                         .| Data.Conduit.List.map (initialMsg userId)
                                         .| sinkTMChan myChan
                             redirect $ GamesR (GameR gameId)

@@ -8,7 +8,6 @@ module Chat.Types where
 import           Data.Aeson
 import           Data.Aeson.TH
 import           DTO.ChatMessageDetail
-import           FiatGame.Types
 import           GHC.Generics
 import           Import.NoFoundation
 

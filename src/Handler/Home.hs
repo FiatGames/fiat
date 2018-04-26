@@ -5,7 +5,6 @@
 {-# LANGUAGE TypeFamilies          #-}
 module Handler.Home where
 
-import           Database.Persist.Sql  (toSqlKey)
 import           Import
 import           Text.Julius           (RawJS (..))
 import           Yesod.Form.Bootstrap3 (BootstrapFormLayout (..),

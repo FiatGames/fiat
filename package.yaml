@@ -62,6 +62,7 @@ dependencies:
 - async
 - blaze-markup
 - esqueleto
+- exceptions
 - fiat-game
 - quo-vadis
 

@@ -49,10 +49,7 @@ postNewGameR = do
   case result of
     FormSuccess game -> do
       gameId <- runDB $ insertNewGame userId (newGameType game) (newGameName game)
-      --redirect $ GamesR (GameR gameId)
-      defaultLayout $ do
-        setTitle "New Game"
-        $(widgetFile "newGame")
+      redirect $ GamesR (GameR gameId)
     _ -> defaultLayout $ do
       setTitle "New Game"
       $(widgetFile "newGame")
