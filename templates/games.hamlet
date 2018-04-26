@@ -1,0 +1,40 @@
+<h1 .header>
+    Games
+<a .btn .btn-primary href=@{NewGameR}>
+    Start a new game
+<h2>
+    Currently Playing<small> - #{length gamesInProgress} games</small>
+$forall gs <- gamesInProgress
+    <div .panel .panel-default>
+        <div .panel-heading>
+            #{getGameTypeName gs}
+        <div .panel-body>
+            <ul>
+                $forall (Entity k g) <- gs
+                    <li>
+                        <a href=@{GamesR (GameR k)}>
+                            <b>#{gameName g}</b>
+<h2>
+    Setting Up<small> - #{length gamesSettingUp} games</small>
+$forall gs <- gamesSettingUp
+    <div .panel .panel-default>
+        <div .panel-heading>
+            #{getGameTypeName gs}
+        <div .panel-body>
+            <ul>
+                $forall (Entity k g) <- gs
+                    <li>
+                        <a href=@{GamesR (GameR k)}>
+                            <b>#{gameName g}</b>
+<h2>
+    Old Games<small> - #{length gamesDone} games</small>
+$forall gs <- gamesDone
+    <div .panel .panel-default>
+        <div .panel-heading>
+            #{getGameTypeName gs}
+        <div .panel-body>
+            <ul>
+                $forall (Entity k g) <- gs
+                    <li>
+                        <a href=@{GamesR (GameR k)}>
+                            <b>#{gameName g}</b>

@@ -1,0 +1,5 @@
+<div #game>
+    <script src=#{jsSrc}></script>
+<hr>
+<div #chat>
+    <script src=#{chatJs}></script>

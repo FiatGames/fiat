@@ -14,7 +14,7 @@ import           Database.Persist.Sql (fromSqlKey)
 
 type FiatChannel a = TVar (HashMap Int64 (Int, TMChan a))
 
-withChannel :: (ToBackendKey SqlBackend record, MonadUnliftIO m) => FiatChannel b -> Key record -> (TMChan b -> m c) -> m c
+withChannel ::(ToBackendKey SqlBackend record, MonadUnliftIO m) => FiatChannel a -> Key record -> (TMChan a -> m b) -> m b
 withChannel c a = bracket (atomically $ getChan c $ fromSqlKey a) (const $ atomically $ dropFromChan c $ fromSqlKey a)
 
 dropFromChan :: FiatChannel a -> Int64 -> STM ()

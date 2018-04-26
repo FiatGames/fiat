@@ -11,4 +11,12 @@
 
 /comments CommentR POST
 
+/chat ChatR POST
+
 /newGame NewGameR GET POST
+
+/game GamesR:
+  / AllGamesR GET
+  /#GameId GameR GET
+  /#Text/join JoinGameR GET
+  /#GameId/chat GameChatR GET

@@ -1,40 +1,54 @@
 {-# LANGUAGE ExplicitForAll        #-}
 {-# LANGUAGE InstanceSigs          #-}
+{-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NoImplicitPrelude     #-}
 {-# LANGUAGE OverloadedStrings     #-}
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE ViewPatterns          #-}
 
 module Foundation where
 
-import           Control.Monad.Logger (LogSource)
-import           Database.Persist.Sql (ConnectionPool, runSqlPool)
+import           Control.Monad.Logger        (LogSource)
+import           Database.Persist.Sql        (ConnectionPool, runSqlPool)
 import           Import.NoFoundation
-import           Text.Hamlet          (hamletFile)
-import           Text.Jasmine         (minifym)
+import           Text.Hamlet                 (hamletFile)
+import           Text.Jasmine                (minifym)
 
 -- Used only when in "auth-dummy-login" setting is enabled.
+import           Control.Concurrent.STM.Lock (Lock)
+import qualified Data.CaseInsensitive        as CI
+import qualified Data.Text.Encoding          as TE
+import           FiatChannel
+import qualified FiatGame.Types              as FiatGame
 import           Yesod.Auth.Dummy
+import           Yesod.Auth.GoogleEmail2
+import           Yesod.Core.Types            (Logger)
+import qualified Yesod.Core.Unsafe           as Unsafe
+import           Yesod.Default.Util          (addStaticContentExternal)
 
-import qualified Data.CaseInsensitive as CI
-import qualified Data.Text.Encoding   as TE
-import           Yesod.Auth.OpenId    (IdentifierType (Claimed), authOpenId)
-import           Yesod.Core.Types     (Logger)
-import qualified Yesod.Core.Unsafe    as Unsafe
-import           Yesod.Default.Util   (addStaticContentExternal)
+type ChatChannels = FiatChannel [Key ChatMessage]
+type GameChannels = FiatChannel FiatGame.ToFiatMsg
+type GameLocks = TVar (HashMap Int64 Lock)
+type FutureMoves = TVar (HashMap Int64 (UTCTime, FiatGame.ToServerMsg))
 
 -- | The foundation datatype for your application. This can be a good place to
 -- keep settings and values requiring initialization before your application
 -- starts running, such as database connections. Every handler will have
 -- access to the data present here.
 data App = App
-    { appSettings    :: AppSettings
-    , appStatic      :: Static -- ^ Settings for static file serving.
-    , appConnPool    :: ConnectionPool -- ^ Database connection pool.
-    , appHttpManager :: Manager
-    , appLogger      :: Logger
+    { appSettings          :: AppSettings
+    , appStatic            :: Static -- ^ Settings for static file serving.
+    , appConnPool          :: ConnectionPool -- ^ Database connection pool.
+    , appHttpManager       :: Manager
+    , appLogger            :: Logger
+    , appChatChannels      :: ChatChannels
+    , appGameChannels      :: GameChannels
+    , appGameLocks         :: GameLocks
+    , appFutureMoves       :: FutureMoves
+    , appFutureMoveTimeout :: Int
     }
 
 data MenuItem = MenuItem
@@ -109,17 +123,22 @@ instance Yesod App where
 
         -- Define the menu items of the header.
         let menuItems =
-                [ NavbarLeft $ MenuItem
+                [ NavbarLeft MenuItem
                     { menuItemLabel = "Home"
                     , menuItemRoute = HomeR
                     , menuItemAccessCallback = True
                     }
-                , NavbarRight $ MenuItem
+                , NavbarLeft MenuItem
+                    { menuItemLabel = "Games"
+                    , menuItemRoute = GamesR AllGamesR
+                    , menuItemAccessCallback = isJust muser
+                    }
+                , NavbarRight MenuItem
                     { menuItemLabel = "Login"
                     , menuItemRoute = AuthR LoginR
                     , menuItemAccessCallback = isNothing muser
                     }
-                , NavbarRight $ MenuItem
+                , NavbarRight MenuItem
                     { menuItemLabel = "Logout"
                     , menuItemRoute = AuthR LogoutR
                     , menuItemAccessCallback = isJust muser
@@ -154,16 +173,16 @@ instance Yesod App where
         -> Bool       -- ^ Whether or not this is a "write" request.
         -> Handler AuthResult
     -- Routes not requiring authentication.
-    isAuthorized (AuthR _) _   = return Authorized
-    isAuthorized CommentR _    = return Authorized
-    isAuthorized HomeR _       = return Authorized
-    isAuthorized FaviconR _    = return Authorized
-    isAuthorized RobotsR _     = return Authorized
-    isAuthorized (StaticR _) _ = return Authorized
+    isAuthorized (AuthR _) _   = pure Authorized
+    isAuthorized CommentR _    = pure Authorized
+    isAuthorized HomeR _       = pure Authorized
+    isAuthorized FaviconR _    = pure Authorized
+    isAuthorized RobotsR _     = pure Authorized
+    isAuthorized (StaticR _) _ = pure Authorized
 
-    -- the profile route requires that the user is authenticated, so we
-    -- delegate to that function
+
     isAuthorized NewGameR _    = isAuthenticated
+    isAuthorized (GamesR _) _  = isAuthenticated
 
     -- This function creates static content files in the static folder
     -- and names them based on a hash of their content. This allows
@@ -209,13 +228,19 @@ instance YesodBreadcrumbs App where
     breadcrumb
         :: Route App  -- ^ The route the user is visiting currently.
         -> Handler (Text, Maybe (Route App))
-    breadcrumb HomeR       = return ("Home", Nothing)
-    breadcrumb (AuthR _)   = return ("Login", Just HomeR)
+    breadcrumb HomeR              = pure ("Home", Nothing)
+    breadcrumb (AuthR _)          = pure ("Login", Just HomeR)
     breadcrumb (StaticR _) = pure ("Home", Nothing)
-    breadcrumb FaviconR    = pure ("Home", Nothing)
-    breadcrumb RobotsR     = pure ("Home", Nothing)
-    breadcrumb CommentR    = pure ("Home", Nothing)
-    breadcrumb NewGameR    = pure ("New Game",  Nothing)
+    breadcrumb FaviconR = pure ("Home", Nothing)
+    breadcrumb RobotsR = pure ("Home", Nothing)
+    breadcrumb CommentR = pure ("Home", Nothing)
+    breadcrumb (GamesR (GameChatR _))          = pure ("Home", Nothing)
+    breadcrumb (GamesR (GameR gNum)) = runDB $ get gNum >>= \case
+            Nothing -> pure ("Game", Just (GamesR AllGamesR))
+            Just g -> pure ("Game - "<> gameName g, Just (GamesR AllGamesR))
+    breadcrumb (GamesR (JoinGameR _)) = pure ("Game", Just (GamesR AllGamesR))
+    breadcrumb (GamesR AllGamesR) = pure ("Games", Just HomeR)
+    breadcrumb NewGameR = pure ("New Game",  Just (GamesR AllGamesR))
 
 -- How to run database actions.
 instance YesodPersist App where
@@ -255,9 +280,11 @@ instance YesodAuth App where
 
     -- You can add other plugins like Google Email, email or OAuth here
     authPlugins :: App -> [AuthPlugin App]
-    authPlugins app = [authOpenId Claimed []] ++ extraAuthPlugins
+    authPlugins app = googleEmail:extraAuthPlugins
         -- Enable authDummy login if enabled.
-        where extraAuthPlugins = [authDummy | appAuthDummyLogin $ appSettings app]
+        where
+            googleEmail =  authGoogleEmail (googleAuthClientId $ appGoogleAuthSettings $ appSettings app) (googleAuthSecretId $ appGoogleAuthSettings $ appSettings app)
+            extraAuthPlugins = [authDummy | appAuthDummyLogin $ appSettings app]
 
 -- | Access function to determine if a user is logged in.
 isAuthenticated :: Handler AuthResult

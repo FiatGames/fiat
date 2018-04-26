@@ -74,13 +74,19 @@ library:
     then:
       ghc-options:
       - -Wall
-      - -fwarn-tabs
+      - -Wcompat
+      - -Wincomplete-record-updates
+      - -Wincomplete-uni-patterns
+      - -Wredundant-constraints
       - -O0
       cpp-options: -DDEVELOPMENT
     else:
       ghc-options:
       - -Wall
-      - -fwarn-tabs
+      - -Wcompat
+      - -Wincomplete-record-updates
+      - -Wincomplete-uni-patterns
+      - -Wredundant-constraints
       - -O2
 
 # Runnable executable for our application

@@ -4,7 +4,9 @@
 {-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE ViewPatterns          #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+
 module Application
     ( getApplicationDev
     , appMain
@@ -45,8 +47,10 @@ import           System.Log.FastLogger                (defaultBufSize,
 
 -- Import all relevant handler modules here.
 -- Don't forget to add new modules to your cabal file!
+import           Handler.Chat
 import           Handler.Comment
 import           Handler.Common
+import           Handler.Game
 import           Handler.Home
 import           Handler.NewGame
 
@@ -68,6 +72,12 @@ makeFoundation appSettings = do
     appStatic <-
         (if appMutableStatic appSettings then staticDevel else static)
         (appStaticDir appSettings)
+
+    appChatChannels <- newTVarIO mempty
+    appGameChannels <- newTVarIO mempty
+    appGameLocks <- newTVarIO mempty
+    appFutureMoves <- newTVarIO mempty
+    let appFutureMoveTimeout = 500000
 
     -- We need a log function to create a connection pool. We need a connection
     -- pool to create our foundation. And we need our foundation to get a
@@ -140,7 +150,7 @@ getApplicationDev = do
     return (wsettings, app)
 
 getAppSettings :: IO AppSettings
-getAppSettings = loadYamlSettings [configSettingsYml] [] useEnv
+getAppSettings = loadYamlSettings [configSettingsYml, "config/auth-keys.yml"] [] useEnv
 
 -- | main function for use by yesod devel
 develMain :: IO ()

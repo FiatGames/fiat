@@ -23,6 +23,12 @@ import           Yesod.Default.Config2       (applyEnvValue, configSettingsYml)
 import           Yesod.Default.Util          (WidgetFileSettings,
                                               widgetFileNoReload,
                                               widgetFileReload)
+data GoogleAuthSettings = GoogleAuthSettings
+    { googleAuthClientId :: Text
+    , googleAuthSecretId :: Text
+    }
+instance FromJSON GoogleAuthSettings where
+    parseJSON = withObject "google-auth" $ \o -> GoogleAuthSettings <$> o .: "client-id" <*> o.: "secret-id"
 
 -- | Runtime settings to configure this application. These settings can be
 -- loaded from various sources: defaults, environment variables, config files,
@@ -62,6 +68,8 @@ data AppSettings = AppSettings
 
     , appAuthDummyLogin         :: Bool
     -- ^ Indicate if auth dummy login should be enabled.
+
+    , appGoogleAuthSettings     :: GoogleAuthSettings
     }
 
 instance FromJSON AppSettings where
@@ -92,6 +100,8 @@ instance FromJSON AppSettings where
 
         appAuthDummyLogin         <- o .:? "auth-dummy-login"      .!= dev
 
+        appGoogleAuthSettings     <- o.: "google-auth"
+
         return AppSettings {..}
 
 -- | Settings for 'widgetFile', such as which template languages to support and
@@ -118,7 +128,7 @@ widgetFile = (if appReloadTemplates compileTimeAppSettings
 
 -- | Raw bytes at compile time of @config/settings.yml@
 configSettingsYmlBS :: ByteString
-configSettingsYmlBS = $(embedFile configSettingsYml)
+configSettingsYmlBS = $(embedFile configSettingsYml) <> $(embedFile "config/auth-keys.yml")
 
 -- | @config/settings.yml@, parsed to a @Value@.
 configSettingsYmlValue :: Value
@@ -129,7 +139,7 @@ configSettingsYmlValue = either Exception.throw id
 compileTimeAppSettings :: AppSettings
 compileTimeAppSettings =
     case fromJSON $ applyEnvValue False mempty configSettingsYmlValue of
-        Error e -> error e
+        Error e          -> error e
         Success settings -> settings
 
 -- The following two functions can be used to combine multiple CSS or JS files
