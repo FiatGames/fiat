@@ -1,0 +1,32 @@
+sudo: false
+
+language: generic
+
+addons:
+  postgresql: "9.3"
+  apt:
+   packages:
+   - libgmp-dev
+
+before_install:
+  # Using compiler above sets CC to an invalid value, so unset it
+  - unset CC
+
+  # stack
+  - mkdir -p ~/.local/bin
+  - export PATH=$HOME/.local/bin:$PATH
+  - travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
+
+before_script:
+  - |
+    psql <<EOF
+    CREATE USER "fiat" password 'fiat';
+    CREATE DATABASE "fiat_test" OWNER "fiat";
+
+script:
+  - stack init --no-terminal
+  - stack build --no-terminal --test --bench --install-ghc --haddock --no-haddock-deps --jobs 1
+
+cache:
+  directories:
+    - $HOME/.stack
