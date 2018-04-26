@@ -14,6 +14,7 @@ createdb fiat_test
     * On POSIX systems, this is usually `curl -sSL https://get.haskellstack.org/ | sh`
 2.  Install the `yesod` command line tool: `stack install yesod-bin --install-ghc`
 3.  Build libraries: `stack build`
+4.  Add a new file `config/auth-keys.yml` that houses the for OAuth keys for Google.
 
 If you have trouble, refer to the [Yesod Quickstart guide](https://www.yesodweb.com/page/quickstart) for additional detail.
 
