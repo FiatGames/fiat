@@ -1,0 +1,22 @@
+{
+  "name": "quo-vadis",
+  "version": "1.0.0",
+  "dependencies": {
+    "purescript": "^0.11.7",
+    "purescript-psa": "^0.6.0",
+    "purs-loader": "^3.1.4",
+    "webpack": "^3.5.5",
+    "webpack-dev-server": "^2.7.1"
+  },
+  "devDependencies": {
+    "css-loader": "^0.28.11",
+    "file-loader": "^1.1.11",
+    "node-sass": "^4.8.3",
+    "sass-loader": "^7.0.1",
+    "style-loader": "^0.20.3",
+    "url-loader": "^1.0.1"
+  },
+  "scripts": {
+    "webpack:watch": "webpack --progress --display-error-details --display verbose --watch"
+  }
+}

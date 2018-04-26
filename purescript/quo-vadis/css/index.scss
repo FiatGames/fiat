@@ -1,0 +1,77 @@
+@import "../bower_components/sass-contrast-color/contrast.scss";
+
+$p1-color: hsl(120, 78%, 41%);
+$p2-color: hsl(239, 78%, 41%);
+$p3-color: hsl(30, 50%, 95%);
+$p4-color: hsl(224, 18%, 71%);
+$p5-color: hsl(44, 24%, 43%);
+
+@mixin player-colors($p, $c) {
+  .panel.#{$p} {
+    border-color: $c;
+    .panel-heading {
+      color: contrast($c, white, black);
+      background-color: $c;
+      border-color: $c;
+    }
+  }
+  dl {
+    dd.rival.#{$p} {
+      display: none;
+    }
+    dt.rival:active ~ dd.rival.#{$p} {
+      display: block;
+      background-color: $c;
+      color: contrast($c, white, black);
+    }
+  }
+  svg {
+    .#{$p} {
+      fill-opacity: 1;
+      fill: $c;
+      stroke-opacity: 1;
+      stroke: black;
+      stroke-width: 0.5;
+    }
+  }
+}
+
+svg {
+  .committee,
+  .laurel,
+  .committee-spot {
+    transition: 100ms;
+    transition-timing-function: ease-in-out;
+    -webkit-transition: 100ms;
+    -webkit-transition-timing-function: ease-in-out;
+    fill-opacity: 0;
+    stroke-opacity: 0;
+  }
+
+  .selectable {
+    fill: white;
+    fill-opacity: 0.2;
+    stroke: green;
+    stroke-width: 0.5;
+    stroke-opacity: 1;
+  }
+
+  .hoverable:hover {
+    fill: black;
+    fill-opacity: 0.2;
+  }
+
+  .selected {
+    fill: black !important;
+    fill-opacity: 0.3 !important;
+    stroke: red !important;
+    stroke-width: 0.5 !important;
+    stroke-opacity: 1 !important;
+  }
+}
+
+@include player-colors("p1", $p1-color);
+@include player-colors("p2", $p2-color);
+@include player-colors("p3", $p3-color);
+@include player-colors("p4", $p4-color);
+@include player-colors("p5", $p5-color);

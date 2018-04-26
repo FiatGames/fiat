@@ -21,6 +21,7 @@ module Application
     , db
     ) where
 
+import qualified CodeGen
 import           Control.Monad.Logger                 (liftLoc, runLoggingT)
 import           Database.Persist.Postgresql          (createPostgresqlPool,
                                                        pgConnStr, pgPoolSize,
@@ -44,7 +45,6 @@ import           Network.Wai.Middleware.RequestLogger (Destination (Logger),
 import           System.Log.FastLogger                (defaultBufSize,
                                                        newStdoutLoggerSet,
                                                        toLogStr)
-
 -- Import all relevant handler modules here.
 -- Don't forget to add new modules to your cabal file!
 import           Handler.Chat
@@ -154,7 +154,9 @@ getAppSettings = loadYamlSettings [configSettingsYml, "config/auth-keys.yml"] []
 
 -- | main function for use by yesod devel
 develMain :: IO ()
-develMain = develMainHelper getApplicationDev
+develMain = do
+    CodeGen.main
+    develMainHelper getApplicationDev
 
 -- | The @main@ function for an executable running this site.
 appMain :: IO ()

@@ -46,7 +46,8 @@ extra-deps:
   commit: 1b96ee93cf03c7ae96859f5514f502e0272ca236
 - git: https://github.com/FiatGames/quo-vadis
   commit: 3e807113e8a3166b8f35c5083438d01738362732
-  
+- git: https://github.com/z0isch/purescript-bridge
+  commit: 8a3dc04f672136ac265cbf9f5898cfc80283fe66
 
 # Override default flag values for local packages and extra-deps
 # flags: {}
