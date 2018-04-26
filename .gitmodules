@@ -1,0 +1,3 @@
+[submodule "purescript/purescript-fiat-game"]
+	path = purescript/purescript-fiat-game
+	url = https://github.com/FiatGames/purescript-fiat-game.git
