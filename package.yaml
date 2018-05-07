@@ -63,6 +63,8 @@ dependencies:
 - blaze-markup
 - esqueleto
 - exceptions
+- wreq
+- newtype
 - fiat-game
 - quo-vadis
 

@@ -20,3 +20,5 @@
   /#GameId GameR GET
   /#Text/join JoinGameR GET
   /#GameId/chat GameChatR GET
+
+/unityTest UnityTestR GET

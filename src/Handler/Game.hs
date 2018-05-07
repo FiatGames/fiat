@@ -56,6 +56,7 @@ getJavascriptPath userId (Game _ g code _ _ _ _ _) gameId = do
         localJs file = render (StaticR (StaticRoute ["js", file] [])) queryParams
     case g of
         QuoVadis  -> pure $ localJs "quo-vadis.js"
+        TicTacToe -> pure $ localJs "tic-tac-toe.js"
 
 getAllGamesR :: Handler Html
 getAllGamesR = do

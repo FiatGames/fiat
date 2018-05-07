@@ -11,7 +11,6 @@ module GameChannelProcessor where
 import           Control.Concurrent.STM.Lock (Lock)
 import qualified Control.Concurrent.STM.Lock as Lock
 import           Control.Lens
-import           Control.Monad.Catch
 import qualified Data.HashMap.Strict         as HM
 import           Data.Maybe
 import           Database.Persist.Sql        (fromSqlKey)
@@ -20,10 +19,6 @@ import           GameType
 import           Import
 import           Queries.FutureGameMove
 import           Queries.Game
-
-data ProccessToServerMsgException = GameDoesNotExist
-    deriving Show
-instance Exception ProccessToServerMsgException
 
 withLock :: MonadUnliftIO m => Lock -> m b -> m b
 withLock lock inner = withRunInIO $ \runInIO -> Lock.with lock $ runInIO inner
@@ -45,26 +40,24 @@ addUserToGameIfCan userId (Entity gameId game) locks = do
             Nothing -> pure False
             Just s  -> addUserToGame gameId userId s >> pure True
 
-processToServerMsg :: (MonadThrow m, MonadUnliftIO m) => FiatPlayer -> Key Game -> App -> Text -> ReaderT SqlBackend m Processed
+processToServerMsg :: MonadUnliftIO m => FiatPlayer -> Key Game -> App -> Text -> ReaderT SqlBackend m Processed
 processToServerMsg pl gameId app msg = do
+    game <- get404 gameId
     lock <- atomically $ getGameStateLock (appGameLocks app) gameId
     withLock lock $ do
         _ <- deleteFutureGameMove gameId
         _ <- atomically $ modifyTVar' (appFutureMoves app) $ HM.delete (fromSqlKey gameId)
-        get gameId >>= \case
-            Nothing -> throwM GameDoesNotExist
-            Just game -> do
-                let f = FromFiat (SettingsMsg $ gameSettings game) (GameStateMsg <$> gameState game) (FiatGameHash $ gameStateHash game)
-                    mv = MoveSubmittedBy pl
-                    toServerMsg = ToServerMsg msg
-                processed <- processToServer (gameType game) mv f toServerMsg
-                case processed^.processedSuccessFul of
+        let f = FromFiat (SettingsMsg $ gameSettings game) (GameStateMsg <$> gameState game) (FiatGameHash $ gameStateHash game)
+            mv = MoveSubmittedBy pl
+            toServerMsg = ToServerMsg msg
+        processed <- processToServer (gameType game) mv f toServerMsg
+        case processed^.processedSuccessFul of
+            Nothing -> pure ()
+            Just success -> do
+                _ <- updateGame gameId success
+                case success^?successfulProcessedFutureMove._Just of
                     Nothing -> pure ()
-                    Just success -> do
-                        _ <- updateGame gameId success
-                        case success^?successfulProcessedFutureMove._Just of
-                            Nothing -> pure ()
-                            Just fmv -> do
-                                _ <- insertFutureGameMove gameId fmv
-                                atomically $ modifyTVar' (appFutureMoves app) $ HM.insert (fromSqlKey gameId) fmv
-                pure processed
+                    Just fmv -> do
+                        _ <- insertFutureGameMove gameId fmv
+                        atomically $ modifyTVar' (appFutureMoves app) $ HM.insert (fromSqlKey gameId) fmv
+        pure processed

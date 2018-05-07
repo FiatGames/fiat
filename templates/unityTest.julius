@@ -1,0 +1,2 @@
+var myGame = UnityLoader.instantiate(document.getElementById("gameContainer"), "static/js/unity-test/Build/build.json");
+setTimeout(function(){myGame.SendMessage("TestJSText","TestJs","foobar");},5000);

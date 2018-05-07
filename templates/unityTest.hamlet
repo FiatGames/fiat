@@ -1,0 +1,5 @@
+<h1>
+  Unity Test
+
+<div #gameContainer style="width: 960px; height: 600px"></div>
+<script src="static/js/unity-test/Build/UnityLoader.js"></script>

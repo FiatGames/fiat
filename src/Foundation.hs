@@ -180,6 +180,7 @@ instance Yesod App where
     isAuthorized RobotsR _     = pure Authorized
     isAuthorized (StaticR _) _ = pure Authorized
 
+    isAuthorized UnityTestR _  = isAuthenticated
     isAuthorized ChatR _       = isAuthenticated
     isAuthorized NewGameR _    = isAuthenticated
     isAuthorized (GamesR _) _  = isAuthenticated
@@ -242,6 +243,7 @@ instance YesodBreadcrumbs App where
     breadcrumb (GamesR (JoinGameR _)) = pure ("Game", Just (GamesR AllGamesR))
     breadcrumb (GamesR AllGamesR) = pure ("Games", Just HomeR)
     breadcrumb NewGameR = pure ("New Game",  Just (GamesR AllGamesR))
+    breadcrumb UnityTestR              = pure ("UnityTest", Nothing)
 
 -- How to run database actions.
 instance YesodPersist App where
